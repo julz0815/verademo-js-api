@@ -1,0 +1,36 @@
+name: Veracode Pipeline Scan
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+   security_scan:
+    name: Veracode Packaging
+    runs-on: ubuntu-latest
+    continue-on-error: true   # == allow_failure: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Veracode CLI
+        run: |
+          curl -fsS https://tools.veracode.com/veracode-cli/install | sh
+
+      - name: Package application
+        run: |
+          ./veracode package --source . --output veracode-artifacts --trust
+          ls -la veracode-artifacts
+          
+      - name: pipeline-scan action step
+        id: pipeline-scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.12
+        with:
+          vid: ${{ secrets.VID }}
+          vkey: ${{ secrets.VKEY }}
+          file: "veracode-artifacts/veracode-auto-pack-verademo-javascript-api-js-no-pm.zip" 
+          veracode_policy_name: "VeraDemo Policy"
+          fail_build: true
+
